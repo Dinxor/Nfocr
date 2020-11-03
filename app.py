@@ -53,7 +53,7 @@ def decode_batch_predictions(pred):
     return output_text
 
 model = load_model(
-    'turbobit.h5',
+    'turbobit.sav',
     custom_objects={'CTCLayer': CTCLayer},
     compile=True
 )
