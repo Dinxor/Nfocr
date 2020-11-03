@@ -5,6 +5,7 @@ from tensorflow.keras import layers
 from keras.models import load_model
 
 from flask import Flask, request
+from gevent.pywsgi import WSGIServer
 import os
 
 characters = ['2','3','4','5','6','7','9','A','C','D','E','F','H','J','K','L','M','N','P','R','S','T','U','V','W','X','Y','Z']
@@ -68,8 +69,7 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 MAX_FILE_SIZE = 16 * 1024 + 1
 
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+    return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
@@ -102,4 +102,6 @@ def upload_file():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+#    app.run(host='0.0.0.0', port=port)
+    http_server = WSGIServer(('0.0.0.0', port), app)
+    http_server.serve_forever()
