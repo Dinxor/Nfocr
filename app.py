@@ -9,14 +9,10 @@ import os
 
 characters = ['2','3','4','5','6','7','9','A','C','D','E','F','H','J','K','L','M','N','P','R','S','T','U','V','W','X','Y','Z']
 
-char_to_num = layers.experimental.preprocessing.StringLookup(
-    vocabulary=list(characters), num_oov_indices=0, mask_token=None
-)
+char_to_num = layers.experimental.preprocessing.StringLookup(vocabulary=list(characters), num_oov_indices=0, mask_token=None)
 
 # Mapping integers back to original characters
-num_to_char = layers.experimental.preprocessing.StringLookup(
-    vocabulary=char_to_num.get_vocabulary(), mask_token=None, invert=True
-)
+num_to_char = layers.experimental.preprocessing.StringLookup(vocabulary=char_to_num.get_vocabulary(), mask_token=None, invert=True)
 
 class CTCLayer(layers.Layer):
     def __init__(self, name=None, **kwargs):
@@ -50,15 +46,9 @@ def decode_batch_predictions(pred):
         output_text.append(res)
     return output_text
 
-model = load_model(
-    'turbobit.sav',
-    custom_objects={'CTCLayer': CTCLayer},
-    compile=True
-)
+model = load_model('turbobit.sav', custom_objects={'CTCLayer': CTCLayer}, compile=True)
 
-prediction_model = keras.models.Model(
-    model.get_layer(name="image").input, model.get_layer(name="dense2").output
-)
+prediction_model = keras.models.Model(model.get_layer(name="image").input, model.get_layer(name="dense2").output)
 
 def get_code(img):
     img = tf.io.decode_png(img, channels=1)
