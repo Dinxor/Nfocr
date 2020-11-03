@@ -1,0 +1,5 @@
+Flask==1.1.2
+gevent==20.6.2
+Keras==2.4.3
+numpy==1.18.5
+tensorflow==2.3.0
