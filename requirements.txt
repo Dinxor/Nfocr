@@ -1,5 +1,4 @@
-Flask
-gevent
-Keras
-numpy
-tensorflow
+Flask==1.1.2
+Keras==2.4.3
+numpy==1.18.5
+tensorflow==2.3.0

@@ -5,8 +5,6 @@ from tensorflow.keras import layers
 from keras.models import load_model
 
 from flask import Flask, request
-from gevent.pywsgi import WSGIServer
-import time
 import os
 
 characters = ['2','3','4','5','6','7','9','A','C','D','E','F','H','J','K','L','M','N','P','R','S','T','U','V','W','X','Y','Z']
@@ -89,7 +87,6 @@ def upload_file():
         file = request.files['file']
         if file and allowed_file(file.filename):
             file_bytes = file.read(MAX_FILE_SIZE)
-            print(len(file_bytes))
             try:
                 rez = get_code(file_bytes)
             except:
@@ -101,10 +98,6 @@ def upload_file():
                         rez = rez[0]+rez
                 else:
                     rez = 'QWER'
-            print(rez)
-            f = open(os.path.join(app.config['UPLOAD_FOLDER'], '%s_%s.png' % (str(int(time.time())), rez)), 'wb')
-            f.write(file_bytes)
-            f.close()
             return rez
 
     return '''
