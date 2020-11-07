@@ -7,6 +7,7 @@ from keras.models import load_model
 from flask import Flask, request
 from gevent.pywsgi import WSGIServer
 import os
+import time
 
 characters = ['2','3','4','5','6','7','9','A','C','D','E','F','H','J','K','L','M','N','P','R','S','T','U','V','W','X','Y','Z']
 
@@ -73,9 +74,18 @@ def allowed_file(filename):
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
+    global total, first, second, third
     if request.method == 'POST':
         file = request.files['file']
         if file and allowed_file(file.filename):
+            tryes = file.filename[-5]
+            if tryes == '3':
+                first +=1
+            elif tryes == '5':
+                second+=1
+            elif tryes == '7':
+                third +=1
+            total +=1
             file_bytes = file.read(MAX_FILE_SIZE)
             try:
                 rez = get_code(file_bytes)
@@ -89,7 +99,7 @@ def upload_file():
                 else:
                     rez = 'QWER'
             return rez
-
+    now = int(time.time())
     return '''
     <!doctype html>
     <title>Upload new File</title>
@@ -98,9 +108,14 @@ def upload_file():
       <p><input type=file name=file>
          <input type=submit value=Upload>
     </form>
-    '''
+    Captcha solver powered by Dinxor<br>
+    Working %s days %s hours %s min %s sec<br>
+    Accurate %s %%, counter all/1st/2nd/3rd: %s/%s/%s/%s
+    ''' % ((now-start)//86400, ((now-start)%86400)//3600, ((now-start)%3600)//60, (now-start)%60, (round(100*first/total, 1) if total > 0 else 0), total, first, second, third)
 
 if __name__ == '__main__':
+    start = int(time.time())
+    total, first, second, third = 0,0,0,0
     port = int(os.environ.get("PORT", 5000))
 #    app.run(host='0.0.0.0', port=port)
     http_server = WSGIServer(('0.0.0.0', port), app)
