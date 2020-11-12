@@ -48,7 +48,7 @@ def decode_batch_predictions(pred):
         output_text.append(res)
     return output_text
 
-model = load_model('turbobit.sav', custom_objects={'CTCLayer': CTCLayer}, compile=True)
+model = load_model('turbobit.h5', custom_objects={'CTCLayer': CTCLayer}, compile=True)
 
 prediction_model = keras.models.Model(model.get_layer(name="image").input, model.get_layer(name="dense2").output)
 
