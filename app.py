@@ -3,6 +3,8 @@ import numpy as np
 from tensorflow import keras
 from tensorflow.keras import layers
 from keras.models import load_model
+import cloudinary
+from cloudinary.uploader import upload
 
 from flask import Flask, request
 from gevent.pywsgi import WSGIServer
@@ -61,10 +63,12 @@ def get_code(img):
     rez = decode_batch_predictions(pred)[0]
     return rez
 
-UPLOAD_FOLDER = 'uploads'
+cloudinary.config(cloud_name=os.environ['cloud_name'],
+                  api_key=os.environ['api_key'],
+                  api_secret=os.environ['api_secret'])
+save_files = int(os.environ['save_files'])
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 MAX_FILE_SIZE = 16 * 1024 + 1
@@ -74,8 +78,9 @@ def allowed_file(filename):
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
-    global total, first, second, third
+    global total, first, second, third, save_files
     if request.method == 'POST':
+        rcode = ''
         file = request.files['file']
         if file and allowed_file(file.filename):
             tryes = file.filename[-5]
@@ -91,13 +96,21 @@ def upload_file():
                 rez = get_code(file_bytes)
             except:
                 rez = 'TEST'
-            if rez.find('[UNK]'):
+            if rez.find('[UNK]') > -1:
+                rcode = rez.replace('[UNK]', '8')
                 rez = rez.replace('[UNK]', '')
                 if len(rez):
                     while len(rez) < 4:
                         rez = rez[0]+rez
                 else:
                     rez = 'QWER'
+            if save_files:
+                try:
+                    dirname = time.strftime('upload/%Y%m%d/')
+                    fname = str(int(time.time())) + '_' + rez + '_' + tryes + '0' + rcode
+                    upload_result = upload(file_bytes, folder = dirname, public_id = fname)
+                except:
+                    pass
             return rez
     now = int(time.time())
     return '''
@@ -110,7 +123,7 @@ def upload_file():
     </form>
     Captcha solver powered by Dinxor<br>
     Working %s days %s hours %s min %s sec<br>
-    Accurate %s %%, counter all/1st/2nd/3rd: %s/%s/%s/%s
+    Accuracy %s %%, counter all/1st/2nd/3rd: %s/%s/%s/%s
     ''' % ((now-start)//86400, ((now-start)%86400)//3600, ((now-start)%3600)//60, (now-start)%60, (round(100*first/total, 1) if total > 0 else 0), total, first, second, third)
 
 if __name__ == '__main__':
