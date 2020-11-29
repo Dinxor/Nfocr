@@ -106,7 +106,8 @@ def upload_file():
                     rez = 'QWER'
             if save_files:
                 try:
-                    dirname = time.strftime('upload/%Y%m%d/')
+                    year, month, day, hour = map(int, time.strftime("%Y %m %d %H").split())
+                    dirname = 'upload/%s%s%s_%s/' % (year, month, day, hour//8)
                     fname = str(int(time.time())) + '_' + rez + '_' + tryes + '0' + rcode
                     upload_result = upload(file_bytes, folder = dirname, public_id = fname)
                 except:
