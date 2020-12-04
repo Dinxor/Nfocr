@@ -77,6 +77,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 @app.route('/', methods=['GET', 'POST'])
+@app.route('/turbo', methods=['GET', 'POST'])
 def upload_file():
     global total, first, second, third, save_files
     if request.method == 'POST':
@@ -107,7 +108,7 @@ def upload_file():
             if save_files:
                 try:
                     year, month, day, hour = map(int, time.strftime("%Y %m %d %H").split())
-                    dirname = 'upload/%s%s%s_%s/' % (year, month, day, hour//8)
+                    dirname = 'upload/%s%s%s_%s/' % (year, month, day, hour//save_files)
                     fname = str(int(time.time())) + '_' + rez + '_' + tryes + '0' + rcode
                     upload_result = upload(file_bytes, folder = dirname, public_id = fname)
                 except:
