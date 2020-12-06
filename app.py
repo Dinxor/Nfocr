@@ -10,6 +10,7 @@ from flask import Flask, request
 from gevent.pywsgi import WSGIServer
 import os
 import time
+import base64
 
 characters = ['2','3','4','5','6','7','9','A','C','D','E','F','H','J','K','L','M','N','P','R','S','T','U','V','W','X','Y','Z']
 
@@ -69,9 +70,9 @@ cloudinary.config(cloud_name=os.environ['cloud_name'],
 save_files = int(os.environ['save_files'])
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 24 * 1024
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
-MAX_FILE_SIZE = 16 * 1024 + 1
+MAX_FILE_SIZE = 24 * 1024 + 1
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
@@ -93,6 +94,8 @@ def upload_file():
                 third +=1
             total +=1
             file_bytes = file.read(MAX_FILE_SIZE)
+            if 'turbo' in request.path:
+                file_bytes = base64.decodebytes(file_bytes)
             try:
                 rez = get_code(file_bytes)
             except:
