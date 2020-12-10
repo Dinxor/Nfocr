@@ -83,40 +83,59 @@ def upload_file():
     global total, first, second, third, save_files
     if request.method == 'POST':
         rcode = ''
-        file = request.files['file']
-        if file and allowed_file(file.filename):
-            tryes = file.filename[-5]
-            if tryes == '3':
-                first +=1
-            elif tryes == '5':
-                second+=1
-            elif tryes == '7':
-                third +=1
-            total +=1
-            file_bytes = file.read(MAX_FILE_SIZE)
-            if 'turbo' in request.path:
-                file_bytes = base64.decodebytes(file_bytes)
+        if 'turbo' in request.path:
+            tryes = '9'
+            text_data = request.form['text']
             try:
-                rez = get_code(file_bytes)
+                bytes_data = bytes(text_data, 'utf-8')
+                file_bytes = base64.decodebytes(bytes_data)
             except:
-                rez = 'TEST'
-            if rez.find('[UNK]') > -1:
-                rcode = rez.replace('[UNK]', '8')
-                rez = rez.replace('[UNK]', '')
-                if len(rez):
-                    while len(rez) < 4:
-                        rez = rez[0]+rez
-                else:
-                    rez = 'QWER'
-            if save_files:
-                try:
-                    year, month, day, hour = map(int, time.strftime("%Y %m %d %H").split())
-                    dirname = 'upload/%s%s%s_%s/' % (year, month, day, hour//save_files)
-                    fname = str(int(time.time())) + '_' + rez + '_' + tryes + '0' + rcode
-                    upload_result = upload(file_bytes, folder = dirname, public_id = fname)
-                except:
-                    pass
-            return rez
+                return 'TEST'
+        else:
+            file = request.files['file']
+            if file and allowed_file(file.filename):
+                file_bytes = file.read(MAX_FILE_SIZE)
+            else:
+                return 'TEST'
+            tryes = file.filename[-5]
+        if tryes == '3' or tryes == '9':
+            first +=1
+        elif tryes == '5':
+            second+=1
+        elif tryes == '7':
+            third +=1
+        total +=1
+        try:
+            rez = get_code(file_bytes)
+        except:
+            rez = 'TEST'
+        if rez.find('[UNK]') > -1:
+            rcode = rez.replace('[UNK]', '8')
+            rez = rez.replace('[UNK]', '')
+            if len(rez):
+                while len(rez) < 4:
+                    rez = rez[0]+rez
+            else:
+                rez = 'QWER'
+        if save_files:
+            try:
+                year, month, day, hour = map(int, time.strftime("%Y %m %d %H").split())
+                dirname = 'upload/%s%s%s_%s/' % (year, month, day, hour//save_files)
+                fname = str(int(time.time())) + '_' + rez + '_' + tryes + '0' + rcode
+                upload_result = upload(file_bytes, folder = dirname, public_id = fname)
+            except:
+                pass
+        return rez
+    if 'turbo' in request.path:
+        return '''
+        <!doctype html>
+        <title>Enter text</title>
+        <h1>Enter text</h1>
+        <form action="/turbo" method=post>
+          <textarea name="text"></textarea>
+             <input type="submit">
+        </form>
+        '''
     now = int(time.time())
     return '''
     <!doctype html>
