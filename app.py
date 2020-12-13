@@ -90,13 +90,13 @@ def upload_file():
                 bytes_data = bytes(text_data, 'utf-8')
                 file_bytes = base64.decodebytes(bytes_data)
             except:
-                return 'TEST'
+                return 'TEST '
         else:
             file = request.files['file']
             if file and allowed_file(file.filename):
                 file_bytes = file.read(MAX_FILE_SIZE)
             else:
-                return 'TEST'
+                return 'TEST '
             tryes = file.filename[-5]
         if tryes == '3' or tryes == '9':
             first +=1
@@ -108,7 +108,7 @@ def upload_file():
         try:
             rez = get_code(file_bytes)
         except:
-            rez = 'TEST'
+            rez = 'TEST  '
         if rez.find('[UNK]') > -1:
             rcode = rez.replace('[UNK]', '8')
             rez = rez.replace('[UNK]', '')
