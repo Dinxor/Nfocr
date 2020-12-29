@@ -14,31 +14,12 @@ import base64
 
 characters = ['2','3','4','5','6','7','9','A','C','D','E','F','H','J','K','L','M','N','P','R','S','T','U','V','W','X','Y','Z']
 
+prediction_model = load_model('turbobit.h5')
+
 char_to_num = layers.experimental.preprocessing.StringLookup(vocabulary=list(characters), num_oov_indices=0, mask_token=None)
 
 # Mapping integers back to original characters
 num_to_char = layers.experimental.preprocessing.StringLookup(vocabulary=char_to_num.get_vocabulary(), mask_token=None, invert=True)
-
-class CTCLayer(layers.Layer):
-    def __init__(self, name=None, **kwargs):
-        super().__init__(name=name)
-        self.loss_fn = keras.backend.ctc_batch_cost
-
-    def call(self, y_true, y_pred):
-        # Compute the training-time loss value and add it
-        # to the layer using `self.add_loss()`.
-        batch_len = tf.cast(tf.shape(y_true)[0], dtype="int64")
-        input_length = tf.cast(tf.shape(y_pred)[1], dtype="int64")
-        label_length = tf.cast(tf.shape(y_true)[1], dtype="int64")
-
-        input_length = input_length * tf.ones(shape=(batch_len, 1), dtype="int64")
-        label_length = label_length * tf.ones(shape=(batch_len, 1), dtype="int64")
-
-        loss = self.loss_fn(y_true, y_pred, input_length, label_length)
-        self.add_loss(loss)
-
-        # At test time, just return the computed predictions
-        return y_pred
 
 def decode_batch_predictions(pred):
     input_len = np.ones(pred.shape[0]) * pred.shape[1]
@@ -50,10 +31,6 @@ def decode_batch_predictions(pred):
         res = tf.strings.reduce_join(num_to_char(res)).numpy().decode("utf-8")
         output_text.append(res)
     return output_text
-
-model = load_model('turbobit.h5', custom_objects={'CTCLayer': CTCLayer}, compile=True)
-
-prediction_model = keras.models.Model(model.get_layer(name="image").input, model.get_layer(name="dense2").output)
 
 def get_code(img):
     img = tf.io.decode_png(img, channels=1)
@@ -80,7 +57,7 @@ def allowed_file(filename):
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/turbo', methods=['GET', 'POST'])
 def upload_file():
-    global total, first, second, third, save_files
+    global total, save_files
     if request.method == 'POST':
         rcode = ''
         if 'turbo' in request.path:
@@ -98,12 +75,6 @@ def upload_file():
             else:
                 return 'TEST '
             tryes = file.filename[-5]
-        if tryes == '3' or tryes == '9':
-            first +=1
-        elif tryes == '5':
-            second+=1
-        elif tryes == '7':
-            third +=1
         total +=1
         try:
             rez = get_code(file_bytes)
@@ -147,12 +118,12 @@ def upload_file():
     </form>
     Captcha solver powered by Dinxor<br>
     Working %s days %s hours %s min %s sec<br>
-    Accuracy %s %%, counter all/1st/2nd/3rd: %s/%s/%s/%s
-    ''' % ((now-start)//86400, ((now-start)%86400)//3600, ((now-start)%3600)//60, (now-start)%60, (round(100*first/total, 1) if total > 0 else 0), total, first, second, third)
+    Counter: %s
+    ''' % ((now-start)//86400, ((now-start)%86400)//3600, ((now-start)%3600)//60, (now-start)%60, total)
 
 if __name__ == '__main__':
     start = int(time.time())
-    total, first, second, third = 0,0,0,0
+    total = 0
     port = int(os.environ.get("PORT", 5000))
 #    app.run(host='0.0.0.0', port=port)
     http_server = WSGIServer(('0.0.0.0', port), app)
