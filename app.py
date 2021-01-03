@@ -6,8 +6,9 @@ from keras.models import load_model
 import cloudinary
 from cloudinary.uploader import upload
 
-from flask import Flask, request
+from flask import Flask, request, send_file
 from gevent.pywsgi import WSGIServer
+import io
 import os
 import time
 import base64
@@ -54,10 +55,18 @@ MAX_FILE_SIZE = 24 * 1024 + 1
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
+@app.route('/<path:filename>')
+def last(filename):
+    global lastlmage, lastcode
+    return send_file(
+                io.BytesIO(lastimage),
+                attachment_filename='%s.png' % (filename),
+                mimetype='image/png')
+
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/turbo', methods=['GET', 'POST'])
 def upload_file():
-    global total, save_files
+    global total, save_files, lastimage, lastcode, lastname
     if request.method == 'POST':
         rcode = ''
         if 'turbo' in request.path:
@@ -78,8 +87,12 @@ def upload_file():
         total +=1
         try:
             rez = get_code(file_bytes)
+            lastimage = file_bytes
+            lastcode = rez
+            lastname = rez + str(int(time.time()))[5:]
         except:
             rez = 'TEST  '
+            lastimage = ''
         if rez.find('[UNK]') > -1:
             rcode = rez.replace('[UNK]', '8')
             rez = rez.replace('[UNK]', '')
@@ -97,8 +110,9 @@ def upload_file():
             except:
                 pass
         return rez
+    now = int(time.time())
     if 'turbo' in request.path:
-        return '''
+        rez = '''
         <!doctype html>
         <title>Enter text</title>
         <h1>Enter text</h1>
@@ -106,9 +120,14 @@ def upload_file():
           <textarea name="text"></textarea>
              <input type="submit">
         </form>
-        '''
-    now = int(time.time())
-    return '''
+        Working %s days %s hours %s min %s sec<br>
+        Counter: %s
+        ''' % ((now-start)//86400, ((now-start)%86400)//3600, ((now-start)%3600)//60, (now-start)%60, total)
+        if lastimage != '':
+            rez += '<br>Last file: %s' % (lastcode)
+            rez += '<br><img src="/%s.png" alt="Image">' % (lastname)
+        return rez
+    rez = '''
     <!doctype html>
     <title>Upload new File</title>
     <h1>Upload new File</h1>
@@ -116,15 +135,20 @@ def upload_file():
       <p><input type=file name=file>
          <input type=submit value=Upload>
     </form>
-    Captcha solver powered by Dinxor<br>
     Working %s days %s hours %s min %s sec<br>
     Counter: %s
     ''' % ((now-start)//86400, ((now-start)%86400)//3600, ((now-start)%3600)//60, (now-start)%60, total)
+    if lastimage != '':
+        rez += '<br>Last file: %s' % (lastcode)
+        rez += '<br><img src="/%s.png" alt="Image">' % (lastname)
+    return rez
 
 if __name__ == '__main__':
     start = int(time.time())
     total = 0
-    port = int(os.environ.get("PORT", 5000))
-#    app.run(host='0.0.0.0', port=port)
+    lastimage = ''
+    lastcode = ''
+    lastname = ''
+   port = int(os.environ.get("PORT", 5000))
     http_server = WSGIServer(('0.0.0.0', port), app)
     http_server.serve_forever()
