@@ -12,6 +12,7 @@ import io
 import os
 import time
 import base64
+import zipfile
 
 characters = ['2','3','4','5','6','7','9','A','C','D','E','F','H','J','K','L','M','N','P','R','S','T','U','V','W','X','Y','Z']
 
@@ -66,7 +67,7 @@ def last(filename):
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/turbo', methods=['GET', 'POST'])
 def upload_file():
-    global total, save_files, lastimage, lastcode, lastname
+    global total, save_files, lastimage, lastcode, lastname, images
     if request.method == 'POST':
         rcode = ''
         if 'turbo' in request.path:
@@ -90,6 +91,21 @@ def upload_file():
             lastimage = file_bytes
             lastcode = rez
             lastname = rez + str(int(time.time()))[5:]
+            if save_files:
+                images.update({lastname:lastimage})
+                if len(images) >= save_files:
+                    try:
+                        zip_file = io.BytesIO()
+                        with zipfile.ZipFile(zip_file, mode="w",compression=zipfile.ZIP_DEFLATED) as zf:
+                            for nm, fl in images.items():
+                                zf.writestr(nm + '.png', fl)
+                        images = {}
+                        year, month, day, hour, minute, sec = map(int, time.strftime("%Y %m %d %H %M %S").split())
+                        dirname = 'upload/%04d%02d%02d/' % (year, month, day)
+                        fname = '%02d%02d%02d.zip' % (hour, minute, sec)
+                        upload_result = upload(zip_file.getbuffer(), folder = dirname, public_id = fname, resource_type = 'raw')
+                    except:
+                        images = {}
         except:
             rez = 'TEST  '
             lastimage = ''
@@ -101,14 +117,6 @@ def upload_file():
                     rez = rez[0]+rez
             else:
                 rez = 'QWER'
-        if save_files:
-            try:
-                year, month, day, hour = map(int, time.strftime("%Y %m %d %H").split())
-                dirname = 'upload/%s%s%s_%s/' % (year, month, day, hour//save_files)
-                fname = str(int(time.time())) + '_' + rez + '_' + tryes + '0' + rcode
-                upload_result = upload(file_bytes, folder = dirname, public_id = fname)
-            except:
-                pass
         return rez
     now = int(time.time())
     if 'turbo' in request.path:
@@ -149,6 +157,7 @@ if __name__ == '__main__':
     lastimage = ''
     lastcode = ''
     lastname = ''
+    images = {}
     port = int(os.environ.get("PORT", 5000))
     http_server = WSGIServer(('0.0.0.0', port), app)
     http_server.serve_forever()
