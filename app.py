@@ -149,6 +149,6 @@ if __name__ == '__main__':
     lastimage = ''
     lastcode = ''
     lastname = ''
-   port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5000))
     http_server = WSGIServer(('0.0.0.0', port), app)
     http_server.serve_forever()
