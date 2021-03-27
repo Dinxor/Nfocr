@@ -58,7 +58,11 @@ def allowed_file(filename):
 
 @app.route('/myip')
 def myip():
-    return request.remote_addr
+    if not request.headers.getlist("X-Forwarded-For"):
+        myip = request.remote_addr
+    else:
+        myip = request.headers.getlist("X-Forwarded-For")[0]
+    return myip
 
 @app.route('/<path:filename>')
 def last(filename):
