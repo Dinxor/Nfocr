@@ -56,6 +56,10 @@ MAX_FILE_SIZE = 24 * 1024 + 1
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
+@app.route('/myip')
+def myip():
+    return request.remote_addr
+
 @app.route('/<path:filename>')
 def last(filename):
     global lastlmage, lastcode
